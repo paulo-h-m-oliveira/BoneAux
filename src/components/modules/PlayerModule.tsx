@@ -2,17 +2,16 @@ import { useEffect, useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Slider } from '../ui/slider';
 import { Button } from '../ui/button';
-import { Music, Settings2, Upload, Loader2 } from 'lucide-react';
+import { Music, Settings2, Upload, Loader2, Play, Pause, Clock } from 'lucide-react';
 import * as Tone from 'tone';
 import { Midi } from '@tonejs/midi';
 import { useSoundfont } from '../../hooks/useSoundfont';
 import { audioEngine } from '../../lib/AudioEngine';
 import { ScoreManager } from './ScoreManager';
-
-// Using a local Player instance since the AudioEngine mainly manages global state.
-// We can tie its start/stop to the global transport.
+import { useAudioEngine } from '../../hooks/useAudioEngine';
 
 export function PlayerModule() {
+  const { isPlaying, togglePlayback } = useAudioEngine();
   const [player, setPlayer] = useState<Tone.Player | null>(null);
   const [pitchShift, setPitchShift] = useState<Tone.PitchShift | null>(null);
   const [synth, setSynth] = useState<Tone.PolySynth | null>(null);
@@ -24,6 +23,13 @@ export function PlayerModule() {
   const instrumentRef = useRef(instrument);
 
   const [volume, setVolumeState] = useState(0.8);
+  const [pitch, setPitch] = useState(0); // Semitones
+  const [speed, setSpeed] = useState(1); // multiplier tracking target BPM / baseBpm
+  const [baseBpm, setBaseBpm] = useState(120);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(100);
+  
+  const [fileName, setFileName] = useState<string>("Nenhum arquivo");
 
   useEffect(() => {
     instrumentRef.current = instrument;
@@ -32,31 +38,42 @@ export function PlayerModule() {
   useEffect(() => {
     setVolume(volume);
   }, [volume, setVolume]);
-  const [pitch, setPitch] = useState(0); // Semitones
-  const [speed, setSpeed] = useState(1); // 0.5x to 1.5x
-  
-  const [fileName, setFileName] = useState<string>("Nenhum arquivo");
 
   useEffect(() => {
-    // Init audio nodes
     const pShift = new Tone.PitchShift(0).toDestination();
     const plr = new Tone.Player().connect(pShift);
     const syn = new Tone.PolySynth(Tone.Synth).connect(pShift);
     
-    // Sync with transport so it plays when global play is hit
     plr.sync().start(0);
 
     setPitchShift(pShift);
     setPlayer(plr);
     setSynth(syn);
 
+    // Track playback line in seconds (VLine)
+    let animationFrame: number;
+    const updateTime = () => {
+      setCurrentTime(Tone.Transport.seconds);
+      animationFrame = requestAnimationFrame(updateTime);
+    };
+    updateTime();
+
     return () => {
+      cancelAnimationFrame(animationFrame);
       plr.dispose();
       pShift.dispose();
       syn.dispose();
       if (midiPart) midiPart.dispose();
     };
-  }, []); // Only run once on mount
+  }, []);
+
+  useEffect(() => {
+    if (parsedMidi && parsedMidi.header.tempos.length > 0) {
+      setBaseBpm(parsedMidi.header.tempos[0].bpm);
+    } else {
+      setBaseBpm(120);
+    }
+  }, [parsedMidi]);
 
   useEffect(() => {
     if (pitchShift) pitchShift.pitch = pitch;
@@ -67,14 +84,13 @@ export function PlayerModule() {
       player.playbackRate = speed;
     }
     audioEngine.setSpeedMultiplier(speed);
-  }, [speed, player, midiPart]);
+  }, [speed, player]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !player || !synth) return;
     setFileName(file.name);
     
-    // Pause transport safely if playing to prevent glitches while loading
     const wasPlaying = Tone.Transport.state === "started";
     if (wasPlaying) Tone.Transport.pause();
 
@@ -90,6 +106,7 @@ export function PlayerModule() {
       if (isMidi) {
         const midi = new Midi(arrayBuffer);
         setParsedMidi(midi);
+        setDuration(midi.duration);
         
         audioEngine.syncMetronomeToMidi(midi.header.ppq, midi.header.tempos);
         
@@ -121,14 +138,12 @@ export function PlayerModule() {
         
         part.start(0);
         setMidiPart(part);
-        
-        // Clear audio buffer if any left over
         player.buffer = new Tone.ToneAudioBuffer();
       } else {
-        // Audio
         setParsedMidi(null);
         const audioBuffer = await Tone.context.decodeAudioData(arrayBuffer);
         player.buffer = new Tone.ToneAudioBuffer(audioBuffer);
+        setDuration(audioBuffer.duration);
       }
     } catch (err) {
       console.error("Error loading file:", err);
@@ -138,6 +153,13 @@ export function PlayerModule() {
     }
   };
 
+  const handleSeek = (val: number) => {
+    Tone.Transport.seconds = val;
+    setCurrentTime(val);
+  };
+
+  const currentBpm = Math.round(baseBpm * speed);
+
   return (
     <div className="space-y-6 w-full">
       <Card className="w-full">
@@ -146,6 +168,18 @@ export function PlayerModule() {
             <Music className="w-5 h-5 text-primary" />
             Player Flexível
           </CardTitle>
+          <Button 
+            onClick={togglePlayback} 
+            size="sm" 
+            variant={isPlaying ? "destructive" : "default"}
+            className="w-28 font-bold flex items-center gap-2"
+          >
+            {isPlaying ? (
+              <><Pause className="w-4 h-4 fill-current" /> Pausar</>
+            ) : (
+              <><Play className="w-4 h-4 fill-current" /> Tocar</>
+            )}
+          </Button>
         </CardHeader>
         <CardContent className="space-y-6 pt-4">
         
@@ -162,8 +196,28 @@ export function PlayerModule() {
                />
             </Button>
           </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex justify-between items-center text-sm font-medium">
+              <span className="flex items-center gap-2 text-primary text-xs uppercase tracking-wider font-bold">
+                <Clock className="w-4 h-4" /> VLine
+              </span>
+              <span className="tabular-nums font-mono">
+                {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} 
+                <span className="text-muted-foreground text-xs"> / {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}</span>
+              </span>
+            </div>
+            <Slider 
+              min={0} 
+              max={duration || 1} 
+              step={0.1}
+              value={currentTime} 
+              onChange={(e) => handleSeek(Number(e.target.value))} 
+              className="accent-primary"
+            />
+          </div>
           
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 pt-4">
             <span className="text-sm font-medium">Instrumento MIDI (SoundFont)</span>
             <div className="flex items-center gap-2">
               <select 
@@ -214,15 +268,15 @@ export function PlayerModule() {
 
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm font-medium">
-            <span>Velocidade (Rate)</span>
-            <span className="tabular-nums">{speed.toFixed(2)}x</span>
+            <span>Velocidade (BPM)</span>
+            <span className="tabular-nums">{currentBpm} BPM</span>
           </div>
           <Slider 
-            min={0.5} 
-            max={1.5} 
-            step={0.05} 
-            value={speed} 
-            onChange={(e) => setSpeed(Number(e.target.value))} 
+            min={30} 
+            max={240} 
+            step={1} 
+            value={currentBpm} 
+            onChange={(e) => setSpeed(Number(e.target.value) / baseBpm)} 
           />
         </div>
 
