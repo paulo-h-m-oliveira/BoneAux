@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.1",
     "@tailwindcss/vite": "^4.2.2",
     "@tonejs/midi": "^2.0.28",
     "class-variance-authority": "^0.7.1",
