@@ -184,57 +184,66 @@ export function ScoreManager({ midi, pitchShift }: ScoreManagerProps) {
   if (!midi) return null;
 
   return (
-    <Card className="w-full mt-6">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-bold flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" />
-          Exportação de Partituras
+    <Card className="w-full relative overflow-hidden border-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-2xl">
+      <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-orange-500 to-yellow-500" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 pt-6">
+        <CardTitle className="text-2xl font-black flex items-center gap-3 tracking-tighter uppercase text-white">
+          <div className="p-2 bg-orange-500/10 rounded-lg">
+            <FileText className="w-6 h-6 text-orange-400" />
+          </div>
+          Score Generation
         </CardTitle>
-        <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(!isPreviewOpen)} className="gap-2">
-           <Eye className="w-4 h-4" /> {isPreviewOpen ? "Ocultar Preview" : "Print Preview"}
+        <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(!isPreviewOpen)} className="gap-2 h-10 px-6 font-black uppercase tracking-widest rounded-xl border-white/10 hover:bg-white/5 transition-all text-[11px]">
+           <Eye className="w-4 h-4 text-orange-400" /> {isPreviewOpen ? "Hide Control" : "Launch Preview"}
         </Button>
       </CardHeader>
       
       {isPreviewOpen && (
-        <CardContent className="space-y-4 pt-4 border-t border-border mt-2">
-          <div className="flex flex-wrap gap-4 items-end bg-secondary/30 p-4 rounded-lg">
-            <div className="space-y-1">
-              <span className="text-sm font-medium">Trilha Visualizada</span>
-              <select 
-                value={trackIndex} 
-                onChange={(e) => setTrackIndex(Number(e.target.value))}
-                className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm"
-              >
-                {midi.tracks.map((t, i) => (
-                  <option key={i} value={i}>Track {i + 1} ({t.notes.length} notas)</option>
-                ))}
-              </select>
+        <CardContent className="pt-2 space-y-6 pb-8">
+          <div className="flex flex-wrap gap-6 items-end bg-white/[0.03] border border-white/5 p-6 rounded-3xl backdrop-blur-3xl">
+            <div className="space-y-2">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Target Track</span>
+              <div className="relative group">
+                <select 
+                  value={trackIndex} 
+                  onChange={(e) => setTrackIndex(Number(e.target.value))}
+                  className="flex h-12 w-full font-bold rounded-xl border border-white/5 bg-white/5 px-4 pr-10 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/30 appearance-none text-white tracking-tight min-w-[200px]"
+                >
+                  {midi.tracks.map((t, i) => (
+                    <option key={i} value={i} className="bg-[#111]">Layer {i + 1} ({t.notes.length} notes)</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                   <Settings2 className="w-4 h-4" />
+                </div>
+              </div>
             </div>
             
-            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium h-9 px-2">
+            <label className="flex items-center gap-3 cursor-pointer text-xs font-black uppercase tracking-widest h-12 px-6 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-white/80 hover:text-white group">
               <input 
                 type="checkbox" 
                 checked={showMetronome} 
                 onChange={(e) => setShowMetronome(e.target.checked)}
-                className="w-4 h-4 rounded text-primary focus:ring-primary"
+                className="w-5 h-5 rounded-md border-white/20 bg-white/5 text-orange-500 focus:ring-orange-500"
               />
-              Incluir Grade do Metrônomo (Percussão)
+              <span className="group-hover:translate-x-1 transition-transform">Include Metronome Stave</span>
             </label>
 
             <div className="flex-1" />
             
-            <Button onClick={exportPDF} className="gap-2 font-bold shadow-lg">
-              <Download className="w-4 h-4" /> Exportar PDF
+            <Button onClick={exportPDF} className="h-12 px-8 gap-3 font-black uppercase tracking-widest text-xs rounded-xl orange-glow">
+              <Download className="w-5 h-5" /> Export PDF System
             </Button>
           </div>
 
-          <div className="border border-border rounded-xl bg-white p-4 overflow-y-auto max-h-[600px] shadow-inner flex justify-center">
+          <div className="border-4 border-black/40 rounded-[2rem] bg-white p-10 overflow-x-auto shadow-inner ring-1 ring-white/10 flex justify-center">
              {midi.tracks.length > 0 ? (
-               <canvas ref={containerRef} className="bg-white w-full max-w-[850px]" />
+               <canvas ref={containerRef} className="bg-white rounded-lg shadow-2xl" />
              ) : (
-               <span className="text-muted-foreground font-medium flex justify-center w-full mt-10">
-                 Arquivo MIDI sem notas.
-               </span>
+               <div className="flex flex-col items-center gap-4 py-20 opacity-20">
+                 <FileText className="w-16 h-16" />
+                 <span className="text-xl font-black uppercase tracking-[0.2em] text-white">No MIDI Signature Detected</span>
+               </div>
              )}
           </div>
         </CardContent>
@@ -242,3 +251,4 @@ export function ScoreManager({ midi, pitchShift }: ScoreManagerProps) {
     </Card>
   );
 }
+

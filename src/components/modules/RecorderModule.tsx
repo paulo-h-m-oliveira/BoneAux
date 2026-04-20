@@ -64,45 +64,78 @@ export function RecorderModule() {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xl font-bold flex items-center gap-2">
-          <Mic className="w-5 h-5 text-destructive" />
-          Gravador de Autoanálise
+    <Card className="w-full relative overflow-hidden border-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-2xl">
+      <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-orange-500 to-yellow-500" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 pt-6">
+        <CardTitle className="text-2xl font-black flex items-center gap-3 tracking-tighter uppercase">
+          <div className="p-2 bg-orange-500/10 rounded-lg">
+            <Mic className="w-6 h-6 text-orange-500" />
+          </div>
+          Session Recorder
         </CardTitle>
+        {isRecording && (
+          <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full animate-pulse border border-red-500/20">
+             <Circle className="w-2 h-2 fill-red-500 text-red-500" />
+             <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Recording</span>
+          </div>
+        )}
       </CardHeader>
-      <CardContent className="pt-4 space-y-4">
-        <div className="flex justify-center p-6 border border-dashed border-border rounded-xl bg-secondary/10">
+      <CardContent className="pt-2 space-y-6 pb-8">
+        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-white/5 rounded-3xl bg-white/2 group hover:bg-white/4 transition-all">
           {!isRecording ? (
-            <Button size="lg" variant="destructive" onClick={startRecording} className="w-48 gap-2 rounded-full font-bold">
-              <Circle className="w-5 h-5 fill-current" /> GRAVAR PRÁTICA
-            </Button>
+            <div className="flex flex-col items-center gap-6">
+              <div className="p-4 bg-orange-500/20 rounded-full group-hover:scale-110 transition-transform duration-500">
+                <Mic className="w-12 h-12 text-orange-500" />
+              </div>
+              <div className="text-center">
+                <h4 className="text-xl font-black text-white tracking-widest uppercase">Start Practice Take</h4>
+                <p className="text-xs text-white/50 mt-1 uppercase tracking-tight font-bold">Capture your audio for auto-analysis</p>
+              </div>
+              <Button size="lg" onClick={startRecording} className="h-14 px-12 text-sm font-black rounded-2xl orange-glow uppercase tracking-widest active:scale-95 transition-all">
+                Record Practice
+              </Button>
+            </div>
           ) : (
-            <Button size="lg" variant="outline" onClick={stopRecording} className="w-48 gap-2 rounded-full font-bold border-destructive text-destructive hover:bg-destructive hover:text-white animate-pulse">
-              <Square className="w-5 h-5 fill-current" /> PARAR (GRAVANDO...)
-            </Button>
+            <div className="flex flex-col items-center gap-6">
+              <div className="p-4 bg-red-500/20 rounded-full animate-pulse">
+                <Square className="w-12 h-12 text-red-500 fill-current" />
+              </div>
+              <div className="text-center">
+                <h4 className="text-xl font-black text-white tracking-widest uppercase animate-pulse">On Air</h4>
+                <p className="text-xs text-white/60 mt-1 uppercase tracking-tight font-black">Capturing high-fidelity audio</p>
+              </div>
+              <Button size="lg" variant="destructive" onClick={stopRecording} className="h-14 px-12 text-sm font-black rounded-2xl uppercase tracking-widest active:scale-95 transition-all border-none bg-red-600 hover:bg-red-700">
+                End Session
+              </Button>
+            </div>
           )}
         </div>
 
         {recordings.length > 0 && (
-          <div className="space-y-2 mt-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Takes Salvos:</h4>
-            {recordings.map((rec, i) => (
-              <div key={i} className="flex items-center justify-between bg-secondary p-3 rounded-lg">
-                <span className="text-sm font-medium">{rec.name}</span>
-                <div className="flex items-center gap-2">
-                  <audio controls src={rec.url} className="h-8 w-48" />
-                  <Button size="icon" variant="ghost" asChild>
-                    <a href={rec.url} download={`${rec.name.replace(/:/g, '-')}.webm`}>
-                      <Download className="w-4 h-4 text-primary" />
-                    </a>
-                  </Button>
+          <div className="space-y-4 pt-4 border-t border-white/5">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Practice Archives</span>
+            <div className="grid grid-cols-1 gap-3">
+              {recordings.map((rec, i) => (
+                <div key={i} className="flex items-center justify-between bg-white/3 border border-white/5 p-4 rounded-2xl group hover:bg-white/5 transition-all">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-white uppercase tracking-tighter">{rec.name}</span>
+                    <span className="text-[10px] text-white/40 uppercase font-bold">Session Capture</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <audio controls src={rec.url} className="h-10 w-48 opacity-80 hover:opacity-100 transition-opacity" />
+                    <Button size="icon" variant="ghost" className="rounded-full hover:bg-orange-500/10 hover:text-orange-500" asChild>
+                      <a href={rec.url} download={`${rec.name.replace(/:/g, '-')}.webm`}>
+                        <Download className="w-5 h-5" />
+                      </a>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+

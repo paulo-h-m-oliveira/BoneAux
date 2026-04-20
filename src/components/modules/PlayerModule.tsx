@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Slider } from '../ui/slider';
 import { Button } from '../ui/button';
-import { Music, Settings2, Upload, Loader2, Play, Pause, Clock } from 'lucide-react';
+import { Music, Settings2, Upload, Loader2, Play, Pause } from 'lucide-react';
 import * as Tone from 'tone';
 import { Midi } from '@tonejs/midi';
 import { useSoundfont } from '../../hooks/useSoundfont';
@@ -161,129 +161,152 @@ export function PlayerModule() {
   const currentBpm = Math.round(baseBpm * speed);
 
   return (
-    <div className="space-y-6 w-full">
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
-            <Music className="w-5 h-5 text-primary" />
-            Player Flexível
+    <div className="space-y-6 w-full animate-in fade-in slide-in-from-left-4 duration-500">
+      <Card className="w-full overflow-hidden border-primary/10 shadow-2xl">
+        <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-orange-500 to-yellow-500" />
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 pt-6">
+          <CardTitle className="text-2xl font-black flex items-center gap-3 tracking-tighter uppercase">
+            <div className="p-2 bg-orange-500/10 rounded-lg">
+              <Music className="w-6 h-6 text-orange-500" />
+            </div>
+            Universal Player
           </CardTitle>
           <Button 
             onClick={togglePlayback} 
-            size="sm" 
+            size="lg" 
             variant={isPlaying ? "destructive" : "default"}
-            className="w-28 font-bold flex items-center gap-2"
+            className="w-32 font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all h-12"
           >
             {isPlaying ? (
-              <><Pause className="w-4 h-4 fill-current" /> Pausar</>
+              <><Pause className="w-5 h-5 fill-current" /> PAUSE</>
             ) : (
-              <><Play className="w-4 h-4 fill-current" /> Tocar</>
+              <><Play className="w-5 h-5 fill-current" /> PLAY</>
             )}
           </Button>
         </CardHeader>
-        <CardContent className="space-y-6 pt-4">
+        <CardContent className="space-y-8 pt-2">
         
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="w-full text-left justify-start relative overflow-hidden">
-               <Upload className="w-4 h-4 mr-2" />
-               <span className="truncate">{fileName}</span>
-               <input 
-                 type="file" 
-                 accept="audio/*,.mid,.midi"
-                 onChange={handleFileUpload}
-                 className="absolute inset-0 opacity-0 cursor-pointer"
-               />
-            </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Deck Loading</span>
+              <Button variant="outline" className="w-full text-left justify-start relative overflow-hidden h-12 bg-white/5 border-white/5 hover:bg-white/10 group transition-all rounded-xl">
+                 <Upload className="w-5 h-5 mr-3 text-orange-500 group-hover:scale-110 transition-transform" />
+                 <span className="truncate font-bold text-sm tracking-tight">{fileName}</span>
+                 <input 
+                   type="file" 
+                   accept="audio/*,.mid,.midi"
+                   onChange={handleFileUpload}
+                   className="absolute inset-0 opacity-0 cursor-pointer"
+                 />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">V-Line Tracking</span>
+                  <span className="text-xs font-bold text-white/50 uppercase tracking-tight">Timeline status</span>
+                </div>
+                <div className="text-right">
+                  <span className="tabular-nums font-black text-3xl tracking-tighter text-white">
+                    {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} 
+                  </span>
+                  <span className="text-orange-500/50 text-sm font-black tracking-tighter ml-1"> / {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}</span>
+                </div>
+              </div>
+              <div className="relative pt-2">
+                <Slider 
+                  min={0} 
+                  max={duration || 1} 
+                  step={0.1}
+                  value={currentTime} 
+                  onChange={(e) => handleSeek(Number(e.target.value))} 
+                  className="relative z-10"
+                />
+                <div className="absolute top-1/2 left-0 w-full h-[2px] bg-white/5 -translate-y-1/2" />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3 pt-2">
-            <div className="flex justify-between items-center text-sm font-medium">
-              <span className="flex items-center gap-2 text-primary text-xs uppercase tracking-wider font-bold">
-                <Clock className="w-4 h-4" /> VLine
-              </span>
-              <span className="tabular-nums font-mono">
-                {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} 
-                <span className="text-muted-foreground text-xs"> / {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}</span>
-              </span>
+          <div className="space-y-6">
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Engine Output</span>
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <select 
+                    value={instrumentName}
+                    onChange={(e) => setInstrumentName(e.target.value)}
+                    className="flex h-12 w-full font-bold rounded-xl border border-white/5 bg-white/5 px-4 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/30 appearance-none text-white tracking-tight"
+                  >
+                    <option value="trombone" className="bg-[#111]">Trombone</option>
+                    <option value="acoustic_grand_piano" className="bg-[#111]">Piano</option>
+                    <option value="alto_sax" className="bg-[#111]">Alto Sax</option>
+                    <option value="flute" className="bg-[#111]">Flute</option>
+                    <option value="synth_drum" className="bg-[#111]">Synth Drum</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                    <Settings2 className="w-4 h-4" />
+                  </div>
+                </div>
+                {isInstLoading && <Loader2 className="w-6 h-6 animate-spin text-orange-500" />}
+              </div>
             </div>
-            <Slider 
-              min={0} 
-              max={duration || 1} 
-              step={0.1}
-              value={currentTime} 
-              onChange={(e) => handleSeek(Number(e.target.value))} 
-              className="accent-primary"
-            />
-          </div>
-          
-          <div className="flex flex-col gap-1.5 pt-4">
-            <span className="text-sm font-medium">Instrumento MIDI (SoundFont)</span>
-            <div className="flex items-center gap-2">
-              <select 
-                value={instrumentName}
-                onChange={(e) => setInstrumentName(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="trombone" className="bg-background">Trombone</option>
-                <option value="acoustic_grand_piano" className="bg-background">Piano</option>
-                <option value="alto_sax" className="bg-background">Saxofone Alto</option>
-                <option value="flute" className="bg-background">Flauta</option>
-                <option value="synth_drum" className="bg-background">Bateria Synth</option>
-              </select>
-              {isInstLoading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
-            </div>
-            {isInstLoading && <p className="text-xs text-muted-foreground">Carregando instrumento...</p>}
-          </div>
 
-          <div className="space-y-3 pt-2">
-            <div className="flex justify-between items-center text-sm font-medium">
-              <span>Volume (Instrumento MIDI)</span>
-              <span className="tabular-nums">{Math.round(volume * 100)}%</span>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center px-1">
+                <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400">Master Volume</span>
+                <span className="tabular-nums font-black text-lg tracking-tighter text-white">{Math.round(volume * 100)}%</span>
+              </div>
+              <Slider 
+                min={0} 
+                max={1} 
+                step={0.01} 
+                value={volume} 
+                onChange={(e) => setVolumeState(Number(e.target.value))} 
+              />
             </div>
-            <Slider 
-              min={0} 
-              max={1} 
-              step={0.01} 
-              value={volume} 
-              onChange={(e) => setVolumeState(Number(e.target.value))} 
-            />
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex justify-between items-center text-sm font-medium">
-            <span className="flex items-center gap-2"><Settings2 className="w-4 h-4"/> Afinação (Pitch)</span>
-            <span className="tabular-nums">{pitch > 0 ? `+${pitch}` : pitch} semi</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-white/5">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center px-1">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400">Tuning (Pitch)</span>
+              <span className="tabular-nums font-black text-lg tracking-tighter text-white">{pitch > 0 ? `+${pitch}` : pitch}<span className="text-[10px] ml-1 uppercase opacity-40">semi</span></span>
+            </div>
+            <Slider 
+              min={-12} 
+              max={12} 
+              step={1} 
+              value={pitch} 
+              onChange={(e) => setPitch(Number(e.target.value))} 
+            />
           </div>
-          <Slider 
-            min={-12} 
-            max={12} 
-            step={1} 
-            value={pitch} 
-            onChange={(e) => setPitch(Number(e.target.value))} 
-            className="accent-primary"
-          />
-        </div>
 
-        <div className="space-y-3">
-          <div className="flex justify-between items-center text-sm font-medium">
-            <span>Velocidade (BPM)</span>
-            <span className="tabular-nums">{currentBpm} BPM</span>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center px-1">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400">Engine BPM</span>
+              <span className="tabular-nums font-black text-3xl tracking-tighter text-gradient">{currentBpm}<span className="text-xs ml-1 font-black">BPM</span></span>
+            </div>
+            <Slider 
+              min={30} 
+              max={240} 
+              step={1} 
+              value={currentBpm} 
+              onChange={(e) => setSpeed(Number(e.target.value) / baseBpm)} 
+            />
           </div>
-          <Slider 
-            min={30} 
-            max={240} 
-            step={1} 
-            value={currentBpm} 
-            onChange={(e) => setSpeed(Number(e.target.value) / baseBpm)} 
-          />
         </div>
 
         </CardContent>
       </Card>
       
-      {parsedMidi && <ScoreManager midi={parsedMidi} pitchShift={pitch} />}
+      {parsedMidi && (
+        <div className="animate-in zoom-in-95 fade-in duration-500">
+          <ScoreManager midi={parsedMidi} pitchShift={pitch} />
+        </div>
+      )}
     </div>
   );
 }

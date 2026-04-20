@@ -48,39 +48,40 @@ export function LoginModule() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#050505] dark text-white">
       {/* Background decorations */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-orange-500/10 rounded-full blur-[150px] pointer-events-none animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-yellow-500/5 rounded-full blur-[150px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-card/40 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl z-10">
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-primary/20 p-3 rounded-2xl mb-4 shadow-lg shadow-primary/20">
-            <Activity className="w-8 h-8 text-primary" />
+      <div className="w-full max-w-md bg-black/40 backdrop-blur-3xl border border-white/5 p-10 rounded-[2.5rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)] z-10 relative">
+        <div className="flex flex-col items-center mb-10">
+          <div className="bg-linear-to-br from-orange-500 to-yellow-500 p-4 rounded-2xl mb-6 orange-glow transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+            <Activity className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white to-white/60">
+          <h2 className="text-5xl font-black tracking-tighter text-gradient uppercase">
             BoneAux
           </h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            {isLogin ? 'Entre na sua conta para continuar' : 'Crie sua conta no BoneAux'}
+          <div className="h-1 w-12 bg-linear-to-r from-orange-500 to-yellow-500 rounded-full mt-2" />
+          <p className="text-sm font-bold tracking-widest text-muted-foreground mt-4 uppercase opacity-60">
+            {isLogin ? 'Faça a sua Missão!' : 'Junte-se a nós!'}
           </p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-4">
+        <form onSubmit={handleAuth} className="space-y-6">
           {!isLogin && (
             <div className="space-y-2">
-              <Label htmlFor="name">Nome Completo</Label>
-              <div className="relative">
+              <Label htmlFor="name" className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-500/80 ml-1">Nome completo</Label>
+              <div className="relative group">
                 <Input
                   id="name"
                   type="text"
                   placeholder="Seu nome"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="pl-10 bg-black/20 border-white/10 focus-visible:ring-primary/50"
+                  className="h-12 pl-12 bg-white/7 border-white/10 focus:border-orange-500/50 rounded-xl transition-all text-white placeholder:text-white/20"
                   required={!isLogin}
                 />
-                <div className="absolute left-3 top-2.5 text-muted-foreground">
+                <div className="absolute left-4 top-3.5 text-muted-foreground group-focus-within:text-orange-500 transition-colors">
                   <Activity className="w-5 h-5 opacity-50" />
                 </div>
               </div>
@@ -88,55 +89,55 @@ export function LoginModule() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
+            <Label htmlFor="email" className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-500/80 ml-1">E-mail</Label>
+            <div className="relative group">
               <Input
                 id="email"
                 type="email"
-                placeholder="seu@email.com"
+                placeholder="pilot@boneaux.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 bg-black/20 border-white/10 focus-visible:ring-primary/50"
+                className="h-12 pl-12 bg-white/7 border-white/10 focus:border-orange-500/50 rounded-xl transition-all text-white placeholder:text-white/20"
                 required
               />
-              <div className="absolute left-3 top-2.5 text-muted-foreground">
+              <div className="absolute left-4 top-3.5 text-muted-foreground group-focus-within:text-orange-500 transition-colors">
                 <Mail className="w-5 h-5 opacity-50" />
               </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <div className="relative">
+            <Label htmlFor="password" className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-500/80 ml-1">Senha</Label>
+            <div className="relative group">
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 bg-black/20 border-white/10 focus-visible:ring-primary/50"
+                className="h-12 pl-12 bg-white/7 border-white/10 focus:border-orange-500/50 rounded-xl transition-all text-white placeholder:text-white/20"
                 required
               />
-              <div className="absolute left-3 top-2.5 text-muted-foreground">
+              <div className="absolute left-4 top-3.5 text-muted-foreground group-focus-within:text-orange-500 transition-colors">
                 <Lock className="w-5 h-5 opacity-50" />
               </div>
             </div>
           </div>
 
-          {error && <div className="text-red-400 text-sm font-medium p-3 bg-red-400/10 rounded-lg border border-red-400/20">{error}</div>}
-          {successMsg && <div className="text-emerald-400 text-sm font-medium p-3 bg-emerald-400/10 rounded-lg border border-emerald-400/20">{successMsg}</div>}
+          {error && <div className="text-red-400 text-xs font-bold p-4 bg-red-400/5 rounded-xl border border-red-400/10 animate-shake">{error}</div>}
+          {successMsg && <div className="text-orange-400 text-xs font-bold p-4 bg-orange-400/5 rounded-xl border border-orange-400/10">{successMsg}</div>}
 
-          <Button type="submit" className="w-full font-bold mt-6 h-12 rounded-xl" disabled={loading}>
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLogin ? 'Entrar' : 'Criar Conta')}
+          <Button type="submit" className="w-full font-black uppercase tracking-widest text-sm mt-8 h-14 rounded-2xl orange-glow" disabled={loading}>
+            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (isLogin ? 'Entrar no sistema' : 'Criar conta')}
           </Button>
 
-          <div className="text-center mt-6">
+          <div className="text-center mt-8">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-orange-500 transition-all"
             >
-              {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
+              {isLogin ? 'Cadastre-se' : 'Já faz parte? faça o Login'}
             </button>
           </div>
         </form>
