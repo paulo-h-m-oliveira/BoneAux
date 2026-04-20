@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { FileText, Download, Eye } from 'lucide-react';
+import { FileText, Download, Eye, Settings2 } from 'lucide-react';
 import { Midi } from '@tonejs/midi';
 import * as Tone from 'tone';
 import { Renderer, Formatter, Stave, StaveNote, Voice } from 'vexflow';
