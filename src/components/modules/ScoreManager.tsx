@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { FileText, Download, Eye, Settings2 } from 'lucide-react';
+import { FileText, Download, Eye } from 'lucide-react';
 import { Midi } from '@tonejs/midi';
 import * as Tone from 'tone';
 import { Renderer, Formatter, Stave, StaveNote, Voice } from 'vexflow';
@@ -10,11 +10,11 @@ import { jsPDF } from 'jspdf';
 interface ScoreManagerProps {
   midi: Midi | null;
   pitchShift: number; // Semitones
+  trackIndex?: number;
 }
 
-export function ScoreManager({ midi, pitchShift }: ScoreManagerProps) {
+export function ScoreManager({ midi, pitchShift, trackIndex = 0 }: ScoreManagerProps) {
   const containerRef = useRef<HTMLCanvasElement>(null);
-  const [trackIndex, setTrackIndex] = useState<number>(0);
   const [showMetronome, setShowMetronome] = useState<boolean>(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
 
@@ -155,9 +155,9 @@ export function ScoreManager({ midi, pitchShift }: ScoreManagerProps) {
       const pageHeight = pdf.internal.pageSize.getHeight();
       
       pdf.setFontSize(20);
-      pdf.text("BoneAux - Partitura Dinamica", margin, 20);
+      pdf.text("BoneAux - Partitura Dinâmica", margin, 20);
       pdf.setFontSize(12);
-      pdf.text(`Transposicao: ${pitchShift > 0 ? '+' : ''}${pitchShift} semitons`, margin, 30);
+      pdf.text(`Transposição: ${pitchShift > 0 ? '+' : ''}${pitchShift} semitons`, margin, 30);
       
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
       const yOffset = 40;
@@ -174,7 +174,7 @@ export function ScoreManager({ midi, pitchShift }: ScoreManagerProps) {
          currentOffset -= pageHeight;
       }
       
-      pdf.save("boneaux_score.pdf");
+      pdf.save("boneaux_partitura.pdf");
     } catch (err) {
       console.error(err);
       alert("Erro ao exportar PDF.");
@@ -191,34 +191,16 @@ export function ScoreManager({ midi, pitchShift }: ScoreManagerProps) {
           <div className="p-2 bg-orange-500/10 rounded-lg">
             <FileText className="w-6 h-6 text-orange-400" />
           </div>
-          Score Generation
+          Geração de Partitura
         </CardTitle>
         <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(!isPreviewOpen)} className="gap-2 h-10 px-6 font-black uppercase tracking-widest rounded-xl border-white/10 hover:bg-white/5 transition-all text-[11px]">
-           <Eye className="w-4 h-4 text-orange-400" /> {isPreviewOpen ? "Hide Control" : "Launch Preview"}
+           <Eye className="w-4 h-4 text-orange-400" /> {isPreviewOpen ? "Ocultar Controle" : "Ver Partitura"}
         </Button>
       </CardHeader>
       
       {isPreviewOpen && (
         <CardContent className="pt-2 space-y-6 pb-8">
-          <div className="flex flex-wrap gap-6 items-end bg-white/[0.03] border border-white/5 p-6 rounded-3xl backdrop-blur-3xl">
-            <div className="space-y-2">
-              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Target Track</span>
-              <div className="relative group">
-                <select 
-                  value={trackIndex} 
-                  onChange={(e) => setTrackIndex(Number(e.target.value))}
-                  className="flex h-12 w-full font-bold rounded-xl border border-white/5 bg-white/5 px-4 pr-10 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/30 appearance-none text-white tracking-tight min-w-[200px]"
-                >
-                  {midi.tracks.map((t, i) => (
-                    <option key={i} value={i} className="bg-[#111]">Layer {i + 1} ({t.notes.length} notes)</option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                   <Settings2 className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-            
+          <div className="flex flex-wrap gap-6 items-end bg-white/3 border border-white/5 p-6 rounded-3xl backdrop-blur-3xl">
             <label className="flex items-center gap-3 cursor-pointer text-xs font-black uppercase tracking-widest h-12 px-6 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-white/80 hover:text-white group">
               <input 
                 type="checkbox" 
@@ -226,23 +208,23 @@ export function ScoreManager({ midi, pitchShift }: ScoreManagerProps) {
                 onChange={(e) => setShowMetronome(e.target.checked)}
                 className="w-5 h-5 rounded-md border-white/20 bg-white/5 text-orange-500 focus:ring-orange-500"
               />
-              <span className="group-hover:translate-x-1 transition-transform">Include Metronome Stave</span>
+              <span className="group-hover:translate-x-1 transition-transform">Incluir Pentagrama de Metrônomo</span>
             </label>
 
             <div className="flex-1" />
             
             <Button onClick={exportPDF} className="h-12 px-8 gap-3 font-black uppercase tracking-widest text-xs rounded-xl orange-glow">
-              <Download className="w-5 h-5" /> Export PDF System
+              <Download className="w-5 h-5" /> Exportar Sistema PDF
             </Button>
           </div>
 
-          <div className="border-4 border-black/40 rounded-[2rem] bg-white p-10 overflow-x-auto shadow-inner ring-1 ring-white/10 flex justify-center">
+          <div className="border-4 border-black/40 rounded-4xl bg-white p-10 overflow-x-auto shadow-inner ring-1 ring-white/10 flex justify-center">
              {midi.tracks.length > 0 ? (
                <canvas ref={containerRef} className="bg-white rounded-lg shadow-2xl" />
              ) : (
                <div className="flex flex-col items-center gap-4 py-20 opacity-20">
                  <FileText className="w-16 h-16" />
-                 <span className="text-xl font-black uppercase tracking-[0.2em] text-white">No MIDI Signature Detected</span>
+                 <span className="text-xl font-black uppercase tracking-[0.2em] text-white">Nenhuma Assinatura MIDI Detectada</span>
                </div>
              )}
           </div>

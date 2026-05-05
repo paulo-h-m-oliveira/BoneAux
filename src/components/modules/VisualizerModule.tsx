@@ -75,10 +75,10 @@ export function VisualizerModule() {
           <div className="p-2 bg-orange-500/10 rounded-lg">
             <Activity className="w-6 h-6 text-orange-500" />
           </div>
-          Telemetry Waveform
+          Forma de Onda
         </CardTitle>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-orange-500/50 uppercase tracking-[0.2em]">Live Stream</span>
+          <span className="text-[10px] font-black text-orange-500/50 uppercase tracking-[0.2em]">Fluxo ao Vivo</span>
           <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
         </div>
       </CardHeader>
@@ -92,7 +92,7 @@ export function VisualizerModule() {
             className="w-full h-[200px] bg-black/40 rounded-2xl border border-white/5 relative z-10 glass"
           />
           <div className="absolute bottom-4 left-6 flex items-center gap-4 z-20">
-            <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Gain: +12dB</span>
+            <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Ganho: +12dB</span>
             <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Lat: 0.1ms</span>
           </div>
         </div>

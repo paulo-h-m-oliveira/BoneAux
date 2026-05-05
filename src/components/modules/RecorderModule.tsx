@@ -40,7 +40,7 @@ export function RecorderModule() {
         const audioUrl = URL.createObjectURL(audioBlob);
         
         // Add to list
-        const name = `Take ${new Date().toLocaleTimeString()}`;
+        const name = `Gravação ${new Date().toLocaleTimeString()}`;
         setRecordings(prev => [...prev, { url: audioUrl, name }]);
         
         // close tracks to free mic
@@ -71,12 +71,12 @@ export function RecorderModule() {
           <div className="p-2 bg-orange-500/10 rounded-lg">
             <Mic className="w-6 h-6 text-orange-500" />
           </div>
-          Session Recorder
+          Gravador de Sessão
         </CardTitle>
         {isRecording && (
           <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full animate-pulse border border-red-500/20">
              <Circle className="w-2 h-2 fill-red-500 text-red-500" />
-             <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Recording</span>
+             <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Gravando</span>
           </div>
         )}
       </CardHeader>
@@ -88,11 +88,11 @@ export function RecorderModule() {
                 <Mic className="w-12 h-12 text-orange-500" />
               </div>
               <div className="text-center">
-                <h4 className="text-xl font-black text-white tracking-widest uppercase">Start Practice Take</h4>
-                <p className="text-xs text-white/50 mt-1 uppercase tracking-tight font-bold">Capture your audio for auto-analysis</p>
+                <h4 className="text-xl font-black text-white tracking-widest uppercase">Iniciar Gravação</h4>
+                <p className="text-xs text-white/50 mt-1 uppercase tracking-tight font-bold">Capture seu áudio para auto-análise</p>
               </div>
               <Button size="lg" onClick={startRecording} className="h-14 px-12 text-sm font-black rounded-2xl orange-glow uppercase tracking-widest active:scale-95 transition-all">
-                Record Practice
+                Gravar Treino
               </Button>
             </div>
           ) : (
@@ -101,11 +101,11 @@ export function RecorderModule() {
                 <Square className="w-12 h-12 text-red-500 fill-current" />
               </div>
               <div className="text-center">
-                <h4 className="text-xl font-black text-white tracking-widest uppercase animate-pulse">On Air</h4>
-                <p className="text-xs text-white/60 mt-1 uppercase tracking-tight font-black">Capturing high-fidelity audio</p>
+                <h4 className="text-xl font-black text-white tracking-widest uppercase animate-pulse">No Ar</h4>
+                <p className="text-xs text-white/60 mt-1 uppercase tracking-tight font-black">Capturando áudio de alta fidelidade</p>
               </div>
               <Button size="lg" variant="destructive" onClick={stopRecording} className="h-14 px-12 text-sm font-black rounded-2xl uppercase tracking-widest active:scale-95 transition-all border-none bg-red-600 hover:bg-red-700">
-                End Session
+                Finalizar Sessão
               </Button>
             </div>
           )}
@@ -113,13 +113,13 @@ export function RecorderModule() {
 
         {recordings.length > 0 && (
           <div className="space-y-4 pt-4 border-t border-white/5">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Practice Archives</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Arquivos de Treino</span>
             <div className="grid grid-cols-1 gap-3">
               {recordings.map((rec, i) => (
                 <div key={i} className="flex items-center justify-between bg-white/3 border border-white/5 p-4 rounded-2xl group hover:bg-white/5 transition-all">
                   <div className="flex flex-col">
                     <span className="text-xs font-black text-white uppercase tracking-tighter">{rec.name}</span>
-                    <span className="text-[10px] text-white/40 uppercase font-bold">Session Capture</span>
+                    <span className="text-[10px] text-white/40 uppercase font-bold">Captura de Sessão</span>
                   </div>
                   <div className="flex items-center gap-4">
                     <audio controls src={rec.url} className="h-10 w-48 opacity-80 hover:opacity-100 transition-opacity" />

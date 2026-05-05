@@ -9,6 +9,7 @@ import { VisualizerModule } from './components/modules/VisualizerModule';
 import { LoginModule } from './components/modules/LoginModule';
 import { supabase } from './lib/supabase';
 import type { Session } from '@supabase/supabase-js';
+import { cn } from './lib/utils';
 
 export default function App() {
   const { init, isPlaying, togglePlayback } = useAudioEngine();
@@ -86,9 +87,9 @@ export default function App() {
             className="h-11 px-6 font-black uppercase tracking-wider gap-2 shadow-orange-500/20"
           >
             {isPlaying ? (
-              <><Square className="w-4 h-4 fill-current" /> STOP</>
+              <><Square className="w-4 h-4 fill-current" /> PARAR</>
             ) : (
-              <><Play className="w-4 h-4 fill-current" /> {hasStarted ? 'RESUME' : 'START ENGINE'}</>
+              <><Play className="w-4 h-4 fill-current" /> {hasStarted ? 'RETOMAR' : 'INICIAR MOTOR'}</>
             )}
           </Button>
 
@@ -99,7 +100,7 @@ export default function App() {
       </header>
 
       {/* Main Dashboard Workspace */}
-      <main className="flex-1 w-full max-w-7xl p-4 md:p-8 flex flex-col gap-8">
+      <main className={cn("flex-1 w-full flex flex-col", !hasStarted ? "max-w-7xl p-4 md:p-8 justify-center" : "p-4")}>
         {!hasStarted ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
             <div className="relative mb-4">
@@ -107,9 +108,9 @@ export default function App() {
                <Activity className="w-24 h-24 text-orange-500 animate-pulse relative z-10" />
             </div>
             <div className="space-y-4 relative z-10">
-              <h2 className="text-5xl font-black tracking-tighter text-white">READY TO <span className="text-gradient">PLAY?</span></h2>
+              <h2 className="text-5xl font-black tracking-tighter text-white">PRONTO PARA <span className="text-gradient">TOCAR?</span></h2>
               <p className="text-white/60 text-xl leading-relaxed max-w-xl mx-auto">
-                Sua plataforma de precisão musical acaba de ficar mais quente. Ative o motor de áudio para carregar seus módulos.
+                Sua plataforma de precisão musical acaba de ficar mais potente. Ative o motor de áudio para carregar seus módulos.
               </p>
             </div>
             <Button 
@@ -121,22 +122,20 @@ export default function App() {
             </Button>
           </div>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
-            {/* Top Grid: Player and Metronome */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 w-full">
-               <div className="xl:col-span-1">
-                 <PlayerModule />
-               </div>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 flex flex-col gap-6 h-full">
+            {/* Main DAW Interface */}
+            <PlayerModule />
+            
+            {/* Auxiliary Tools Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 w-full">
                <div className="xl:col-span-1">
                  <MetronomeModule />
                </div>
+               <div className="xl:col-span-2">
+                 <VisualizerModule />
+               </div>
             </div>
             
-            {/* Visualizer Span */}
-            <div className="w-full">
-              <VisualizerModule />
-            </div>
-
             <div className="w-full">
               <RecorderModule />
             </div>
@@ -146,3 +145,4 @@ export default function App() {
     </div>
   );
 }
+

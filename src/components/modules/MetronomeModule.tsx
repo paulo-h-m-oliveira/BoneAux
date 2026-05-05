@@ -29,7 +29,7 @@ export function MetronomeModule() {
           <div className="p-2 bg-yellow-500/10 rounded-lg">
             <Metronome className="w-6 h-6 text-yellow-500" />
           </div>
-          Quantum Beat
+          Batida Quântica
         </CardTitle>
         <div className="flex items-center gap-4">
            <div className={cn(
@@ -55,10 +55,10 @@ export function MetronomeModule() {
         <div className="space-y-6">
           <div className="flex justify-between items-end px-1">
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Tempo Control</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Controle de Tempo</span>
               {isMidiSynced && (
                 <span className="text-[9px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-md uppercase tracking-widest animate-pulse">
-                  SLAVE MODE
+                  MODO SINCRONIZADO
                 </span>
               )}
             </div>
@@ -84,7 +84,7 @@ export function MetronomeModule() {
         </div>
 
         <div className="space-y-4">
-          <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Grain Division</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] font-black text-orange-400 ml-1">Divisão Rítmica</span>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((sub) => (
               <Button
@@ -96,7 +96,7 @@ export function MetronomeModule() {
                 )}
                 onClick={() => changeSubdivisions(sub)}
               >
-                {sub === 1 ? 'Quarter' : sub === 2 ? 'Eighth' : sub === 3 ? 'Triplet' : 'Sixteenth'}
+                {sub === 1 ? 'Semínima' : sub === 2 ? 'Colcheia' : sub === 3 ? 'Tercina' : 'Semicolcheia'}
               </Button>
             ))}
           </div>
