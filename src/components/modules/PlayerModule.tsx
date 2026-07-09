@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Music, Upload, Loader2, Download, Save, Volume2, VolumeX, Eye, Layers, Settings, Search, X } from 'lucide-react';
+import { Music, Upload, Loader2, Download, Save, Volume2, VolumeX, Eye, Layers, Settings, Search, X, Play, Pause, Square } from 'lucide-react';
 import * as Tone from 'tone';
 import { Midi } from '@tonejs/midi';
 import { Slider } from '../ui/slider';
@@ -23,7 +23,7 @@ interface TrackState {
 }
 
 export function PlayerModule() {
-  const { isPlaying } = useAudioEngine();
+  const { isPlaying, togglePlayback, stopPlayback } = useAudioEngine();
   const [player, setPlayer] = useState<Tone.Player | null>(null);
   const [pitchShift, setPitchShift] = useState<Tone.PitchShift | null>(null);
   const [synth, setSynth] = useState<Tone.PolySynth | null>(null);
@@ -31,7 +31,7 @@ export function PlayerModule() {
   const [parsedMidi, setParsedMidi] = useState<Midi | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   
-  const { instruments, loadInstrument, setInstrumentVolume, toggleMute, disposeAll } = useMultiSoundfont();
+  const { instruments, loadInstrument, setInstrumentVolume, toggleMute, disposeAll, stopAllNotes } = useMultiSoundfont();
   const [tracks, setTracks] = useState<TrackState[]>([]);
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
 
@@ -42,6 +42,7 @@ export function PlayerModule() {
   const [isInstrumentBrowserOpen, setIsInstrumentBrowserOpen] = useState(false);
   const [browserTargetTrack, setBrowserTargetTrack] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const activeNodesRef = useRef<any[]>([]);
 
   useEffect(() => {
     pitchRef.current = pitch;
@@ -58,8 +59,6 @@ export function PlayerModule() {
     const pShift = new Tone.PitchShift(0).toDestination();
     const plr = new Tone.Player().connect(pShift);
     const syn = new Tone.PolySynth(Tone.Synth).toDestination();
-    
-    plr.sync().start(0);
 
     setPitchShift(pShift);
     setPlayer(plr);
@@ -78,10 +77,12 @@ export function PlayerModule() {
       pShift.dispose();
       syn.dispose();
       disposeAll();
-      if (midiPart) midiPart.dispose();
+      if (midiPartRef.current) midiPartRef.current.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const midiPartRef = useRef<Tone.Part | null>(null);
 
   useEffect(() => {
     if (parsedMidi && parsedMidi.header.tempos.length > 0) {
@@ -98,8 +99,34 @@ export function PlayerModule() {
     audioEngine.setSpeedMultiplier(speed);
   }, [speed, player]);
 
+  // Stop all ringing notes when playback is paused or stopped
+  useEffect(() => {
+    if (!isPlaying) {
+      synth?.releaseAll();
+      stopAllNotes();
+      activeNodesRef.current.forEach(node => {
+        try { node.stop(); } catch(e){}
+      });
+      activeNodesRef.current = [];
+      if (player && player.state === "started") {
+        try { player.stop(); } catch(e){}
+      }
+    } else {
+      if (player && player.buffer && player.buffer.loaded && !parsedMidi) {
+        try { player.start(0, Tone.Transport.seconds); } catch(e){}
+      }
+    }
+  }, [isPlaying, synth, stopAllNotes, player, parsedMidi]);
+
   const rebuildMidiPart = useCallback((currentParsedMidi: Midi, currentTracks: TrackState[]) => {
-    if (midiPart) midiPart.dispose();
+    if (midiPartRef.current) {
+        midiPartRef.current.dispose();
+        midiPartRef.current = null;
+    }
+    activeNodesRef.current.forEach(node => {
+        try { node.stop(); } catch(e){}
+    });
+    activeNodesRef.current = [];
     
     const events: {time: string, note: string, durationTicks: number, velocity: number, instrument: string}[] = [];
     currentParsedMidi.tracks.forEach((track, i) => {
@@ -124,10 +151,11 @@ export function PlayerModule() {
         
         if (inst && inst.player) {
           const transposedFreq = Tone.Frequency(noteValue.note).transpose(pitchRef.current).toNote();
-          inst.player.play(transposedFreq, time, { 
+          const node = inst.player.play(transposedFreq, time, { 
             duration: durationSecs, 
             gain: noteValue.velocity 
           });
+          if (node) activeNodesRef.current.push(node);
         } else {
           const transposedFreq = Tone.Frequency(noteValue.note).transpose(pitchRef.current).toNote();
           synth?.triggerAttackRelease(transposedFreq, durationSecs, time, noteValue.velocity);
@@ -135,8 +163,9 @@ export function PlayerModule() {
     }, events);
     
     part.start(0);
+    midiPartRef.current = part;
     setMidiPart(part);
-  }, [instruments, midiPart, pitchRef, synth]);
+  }, [instruments, pitchRef, synth]);
 
   // Rebuild part whenever instruments are loaded or changed
   useEffect(() => {
@@ -214,6 +243,15 @@ export function PlayerModule() {
   const handleSeek = (val: number) => {
     Tone.Transport.seconds = val;
     setCurrentTime(val);
+    synth?.releaseAll();
+    stopAllNotes();
+    activeNodesRef.current.forEach(node => {
+      try { node.stop(); } catch(e){}
+    });
+    activeNodesRef.current = [];
+    if (isPlaying && player && player.buffer && player.buffer.loaded && !parsedMidi) {
+        try { player.stop(); player.start(0, val); } catch(e){}
+    }
   };
 
   const changeTrackInstrument = async (trackId: number, newInstName: string) => {
@@ -313,18 +351,28 @@ export function PlayerModule() {
         </div>
 
         <div className="flex-1 flex justify-center px-12">
-            <div className="w-full max-w-2xl flex flex-col gap-1">
-                <div className="flex justify-between text-[10px] font-black text-white/40 uppercase tracking-widest px-1">
-                    <span>{Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')}</span>
-                    <span>{Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}</span>
+            <div className="w-full max-w-3xl flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => { stopPlayback(); handleSeek(0); }} className="rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-all">
+                        <Square className="w-4 h-4 fill-current" />
+                    </Button>
+                    <Button variant={isPlaying ? "destructive" : "default"} size="icon" onClick={togglePlayback} className={cn("rounded-full w-12 h-12 transition-all", isPlaying ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20" : "bg-white/10 hover:bg-white/20 text-white border border-white/5")}>
+                        {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-1" />}
+                    </Button>
                 </div>
-                <Slider 
-                  min={0} 
-                  max={duration || 1} 
-                  step={0.1}
-                  value={currentTime} 
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSeek(Number(e.target.value))} 
-                />
+                <div className="flex-1 flex flex-col gap-1">
+                    <div className="flex justify-between text-[10px] font-black text-white/40 uppercase tracking-widest px-1">
+                        <span>{Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')}</span>
+                        <span>{Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}</span>
+                    </div>
+                    <Slider 
+                      min={0} 
+                      max={duration || 1} 
+                      step={0.1}
+                      value={currentTime} 
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSeek(Number(e.target.value))} 
+                    />
+                </div>
             </div>
         </div>
 

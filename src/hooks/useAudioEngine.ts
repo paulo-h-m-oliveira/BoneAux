@@ -22,6 +22,7 @@ export function useAudioEngine() {
 
   const init = useCallback(() => audioEngine.init(), []);
   const togglePlayback = useCallback(() => audioEngine.togglePlayback(), []);
+  const stopPlayback = useCallback(() => audioEngine.stopPlayback(), []);
   const changeBpm = useCallback((val: number) => audioEngine.setBpm(val), []);
   const changeSubdivisions = useCallback((val: number) => audioEngine.setSubdivisions(val), []);
   const toggleMetronome = useCallback(() => audioEngine.toggleMetronomeMute(), []);
@@ -31,6 +32,7 @@ export function useAudioEngine() {
     init,
     isPlaying,
     togglePlayback,
+    stopPlayback,
     bpm,
     changeBpm,
     subdivisions,

@@ -31,6 +31,7 @@ class AudioEngine {
     // For monitoring the master output
     this.waveformViewer = new Tone.Waveform(512);
     Tone.getDestination().connect(this.waveformViewer);
+    Tone.getDestination().mute = true;
   }
 
   // Ensure AudioContext is started (requires user gesture)
@@ -55,11 +56,21 @@ class AudioEngine {
     
     if (this.isPlaying) {
       Tone.getTransport().pause();
+      Tone.getDestination().mute = true;
       this.isPlaying = false;
     } else {
+      Tone.getDestination().mute = false;
       Tone.getTransport().start();
       this.isPlaying = true;
     }
+    this.notify();
+  }
+
+  public stopPlayback() {
+    if (!this.isInitialized) return;
+    Tone.getTransport().stop();
+    Tone.getDestination().mute = true;
+    this.isPlaying = false;
     this.notify();
   }
 

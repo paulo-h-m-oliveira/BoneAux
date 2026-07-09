@@ -66,6 +66,14 @@ export function useMultiSoundfont() {
     }
   }, []);
 
+  const stopAllNotes = useCallback(() => {
+    Object.values(instrumentsRef.current).forEach(inst => {
+      if (inst.player) {
+        inst.player.stop();
+      }
+    });
+  }, []);
+
   const disposeAll = useCallback(() => {
     Object.values(instrumentsRef.current).forEach(inst => {
       inst.gainNode.dispose();
@@ -79,6 +87,7 @@ export function useMultiSoundfont() {
     loadInstrument,
     setInstrumentVolume,
     toggleMute,
-    disposeAll
+    disposeAll,
+    stopAllNotes
   };
 }
