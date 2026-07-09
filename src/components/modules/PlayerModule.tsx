@@ -1,8 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
-import { Music, Upload, Loader2, Play, Pause, Download, Save, Volume2, VolumeX, Eye, Layers, Settings, Search, X } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Music, Upload, Loader2, Download, Save, Volume2, VolumeX, Eye, Layers, Settings, Search, X } from 'lucide-react';
 import * as Tone from 'tone';
 import { Midi } from '@tonejs/midi';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Slider } from '../ui/slider';
 import { Button } from '../ui/button';
 import { audioEngine } from '../../lib/AudioEngine';
@@ -24,7 +23,7 @@ interface TrackState {
 }
 
 export function PlayerModule() {
-  const { isPlaying, togglePlayback } = useAudioEngine();
+  const { isPlaying } = useAudioEngine();
   const [player, setPlayer] = useState<Tone.Player | null>(null);
   const [pitchShift, setPitchShift] = useState<Tone.PitchShift | null>(null);
   const [synth, setSynth] = useState<Tone.PolySynth | null>(null);
@@ -36,9 +35,9 @@ export function PlayerModule() {
   const [tracks, setTracks] = useState<TrackState[]>([]);
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
 
-  const [pitch, setPitch] = useState(0); // Semitones
+  const [pitch] = useState(0); // Semitones
   const pitchRef = useRef(pitch);
-  const [speed, setSpeed] = useState(1); // multiplier tracking target BPM / baseBpm
+  const [speed] = useState(1); // multiplier tracking target BPM / baseBpm
 
   const [isInstrumentBrowserOpen, setIsInstrumentBrowserOpen] = useState(false);
   const [browserTargetTrack, setBrowserTargetTrack] = useState<number | null>(null);
@@ -81,6 +80,7 @@ export function PlayerModule() {
       disposeAll();
       if (midiPart) midiPart.dispose();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export function PlayerModule() {
     audioEngine.setSpeedMultiplier(speed);
   }, [speed, player]);
 
-  const rebuildMidiPart = (currentParsedMidi: Midi, currentTracks: TrackState[]) => {
+  const rebuildMidiPart = useCallback((currentParsedMidi: Midi, currentTracks: TrackState[]) => {
     if (midiPart) midiPart.dispose();
     
     const events: {time: string, note: string, durationTicks: number, velocity: number, instrument: string}[] = [];
@@ -136,7 +136,7 @@ export function PlayerModule() {
     
     part.start(0);
     setMidiPart(part);
-  };
+  }, [instruments, midiPart, pitchRef, synth]);
 
   // Rebuild part whenever instruments are loaded or changed
   useEffect(() => {
@@ -232,14 +232,14 @@ export function PlayerModule() {
             });
         });
         const midiData = modifiedMidi.toArray();
-        const blob = new Blob([midiData as any], { type: 'audio/midi' });
+        const blob = new Blob([midiData as unknown as BlobPart], { type: 'audio/midi' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = `boneaux_modificado_${fileName.split('.')[0]}.mid`;
         link.click();
         URL.revokeObjectURL(url);
-    } catch (e) {
+    } catch {
         alert("Erro ao exportar MIDI.");
     }
   };
@@ -277,7 +277,7 @@ export function PlayerModule() {
 
   const currentBpm = Math.round(baseBpm * speed);
 
-  const filteredInstruments = Object.entries(MIDI_INSTRUMENTS).filter(([_, name]) => 
+  const filteredInstruments = Object.entries(MIDI_INSTRUMENTS).filter(([, name]) => 
     name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

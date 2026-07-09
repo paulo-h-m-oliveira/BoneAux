@@ -31,10 +31,10 @@ export function useMultiSoundfont() {
 
     try {
       const ac = Tone.getContext().rawContext;
-      const player = await Soundfont.instrument(ac as any, name as any, {
+      const player = await Soundfont.instrument(ac as unknown, name, {
         format: 'mp3',
         soundfont: 'MusyngKite',
-        destination: instrumentsRef.current[name].gainNode.input as any
+        destination: instrumentsRef.current[name].gainNode.input as unknown
       });
 
       instrumentsRef.current[name].player = player;

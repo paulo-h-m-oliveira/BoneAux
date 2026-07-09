@@ -48,7 +48,7 @@ export function ScoreManager({ midi, pitchShift, trackIndex = 0 }: ScoreManagerP
          const match = freq.match(/([A-G][#b]?)(-?\d+)/);
          if (match) return `${match[1].toLowerCase()}/${match[2]}`;
          return "c/4";
-      } catch (e) {
+      } catch {
          return "c/4";
       }
     };
@@ -73,7 +73,7 @@ export function ScoreManager({ midi, pitchShift, trackIndex = 0 }: ScoreManagerP
                 currentNotes = [];
                 currentTicks = 0;
             }
-        } catch(e) { /* ignore malformed */ }
+        } catch { /* ignore malformed */ }
     });
 
     if (currentNotes.length > 0) {
@@ -141,6 +141,7 @@ export function ScoreManager({ midi, pitchShift, trackIndex = 0 }: ScoreManagerP
     if (isPreviewOpen) {
       setTimeout(renderScore, 100);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midi, pitchShift, trackIndex, showMetronome, isPreviewOpen]);
 
   const exportPDF = async () => {

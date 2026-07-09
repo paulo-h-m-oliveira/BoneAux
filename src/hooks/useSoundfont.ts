@@ -30,10 +30,10 @@ export function useSoundfont(instrumentName: string) {
         const ac = Tone.getContext().rawContext;
         
         // Load the instrument
-        const player = await Soundfont.instrument(ac as any, instrumentName, {
+        const player = await Soundfont.instrument(ac as unknown, instrumentName, {
           format: 'mp3',
           soundfont: 'MusyngKite',
-          destination: gainNode.input as any
+          destination: gainNode.input as unknown
         });
 
         if (isMounted) {

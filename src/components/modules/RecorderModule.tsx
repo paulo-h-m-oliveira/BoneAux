@@ -123,10 +123,18 @@ export function RecorderModule() {
                   </div>
                   <div className="flex items-center gap-4">
                     <audio controls src={rec.url} className="h-10 w-48 opacity-80 hover:opacity-100 transition-opacity" />
-                    <Button size="icon" variant="ghost" className="rounded-full hover:bg-orange-500/10 hover:text-orange-500" asChild>
-                      <a href={rec.url} download={`${rec.name.replace(/:/g, '-')}.webm`}>
-                        <Download className="w-5 h-5" />
-                      </a>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="rounded-full hover:bg-orange-500/10 hover:text-orange-500"
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = rec.url;
+                        a.download = `${rec.name.replace(/:/g, '-')}.webm`;
+                        a.click();
+                      }}
+                    >
+                      <Download className="w-5 h-5" />
                     </Button>
                   </div>
                 </div>

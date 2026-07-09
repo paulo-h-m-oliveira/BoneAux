@@ -1,36 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Play, Square, Activity, LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Square, Activity, User } from 'lucide-react';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { Button } from './components/ui/button';
 import { MetronomeModule } from './components/modules/MetronomeModule';
 import { PlayerModule } from './components/modules/PlayerModule';
 import { RecorderModule } from './components/modules/RecorderModule';
 import { VisualizerModule } from './components/modules/VisualizerModule';
-import { LoginModule } from './components/modules/LoginModule';
-import { supabase } from './lib/supabase';
-import type { Session } from '@supabase/supabase-js';
 import { cn } from './lib/utils';
 
 export default function App() {
   const { init, isPlaying, togglePlayback } = useAudioEngine();
   const [hasStarted, setHasStarted] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setIsLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleStart = async () => {
     if (!hasStarted) {
@@ -42,21 +22,7 @@ export default function App() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  if (isLoading) {
-    return <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-      <Activity className="w-12 h-12 text-primary animate-pulse" />
-    </div>;
-  }
-
-  if (!session) {
-    return <LoginModule />;
-  }
-
-  const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
+  const userName = 'Usuário';
 
   return (
     <div className="min-h-screen bg-[#050505] text-foreground flex flex-col items-center selection:bg-orange-500/30">
@@ -91,10 +57,6 @@ export default function App() {
             ) : (
               <><Play className="w-4 h-4 fill-current" /> {hasStarted ? 'RETOMAR' : 'INICIAR MOTOR'}</>
             )}
-          </Button>
-
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="rounded-full hover:bg-red-500/10 hover:text-red-500 transition-all">
-            <LogOut className="w-5 h-5" />
           </Button>
         </div>
       </header>

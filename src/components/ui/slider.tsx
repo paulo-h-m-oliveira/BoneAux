@@ -1,7 +1,7 @@
 import React from "react"
 import { cn } from "../../lib/utils"
 
-export interface SliderProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type SliderProps = React.InputHTMLAttributes<HTMLInputElement>
 
 const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
   ({ className, min = 0, max = 100, step = 1, value, onChange, ...props }, ref) => {
