@@ -57,3 +57,15 @@ function writeString(view: DataView, offset: number, string: string) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
 }
+
+export function arraysToAudioBuffer(
+  left: Float32Array,
+  right: Float32Array,
+  sampleRate: number,
+  audioContext: AudioContext
+): AudioBuffer {
+  const buffer = audioContext.createBuffer(2, left.length, sampleRate);
+  buffer.copyToChannel(new Float32Array(left), 0);
+  buffer.copyToChannel(new Float32Array(right), 1);
+  return buffer;
+}

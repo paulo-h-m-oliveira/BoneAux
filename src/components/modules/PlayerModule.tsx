@@ -7,8 +7,10 @@ import { Button } from '../ui/button';
 import { audioEngine } from '../../lib/AudioEngine';
 import { ScoreManager } from './ScoreManager';
 import { useAudioEngine } from '../../hooks/useAudioEngine';
-import { audioBufferToWav } from '../../lib/audioUtils';
+import { audioBufferToWav, arraysToAudioBuffer } from '../../lib/audioUtils';
 import { useMultiSoundfont } from '../../hooks/useMultiSoundfont';
+import { useDemucs } from '../../hooks/useDemucs';
+import { useAudioStems } from '../../hooks/useAudioStems';
 import { getInstrumentName, MIDI_INSTRUMENTS } from '../../lib/midiMapping';
 import { cn } from '../../lib/utils';
 
@@ -20,6 +22,7 @@ interface TrackState {
   isMuted: boolean;
   volume: number;
   program: number;
+  isAudioStem?: boolean;
 }
 
 export function PlayerModule() {
@@ -32,6 +35,8 @@ export function PlayerModule() {
   const [isExporting, setIsExporting] = useState(false);
   
   const { instruments, loadInstrument, setInstrumentVolume, toggleMute, disposeAll, stopAllNotes } = useMultiSoundfont();
+  const { state: demucsState, separate } = useDemucs();
+  const { stems, addStem, setStemVolume: setStemVol, toggleStemMute: toggleStemM, disposeAllStems, startAllStems, stopAllStems, setStemsPlaybackRate } = useAudioStems();
   const [tracks, setTracks] = useState<TrackState[]>([]);
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
 
@@ -77,6 +82,7 @@ export function PlayerModule() {
       pShift.dispose();
       syn.dispose();
       disposeAll();
+      disposeAllStems();
       if (midiPartRef.current) midiPartRef.current.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,8 +102,9 @@ export function PlayerModule() {
     if (player) {
       player.playbackRate = speed;
     }
+    setStemsPlaybackRate(speed);
     audioEngine.setSpeedMultiplier(speed);
-  }, [speed, player]);
+  }, [speed, player, setStemsPlaybackRate]);
 
   // Stop all ringing notes when playback is paused or stopped
   useEffect(() => {
@@ -111,12 +118,14 @@ export function PlayerModule() {
       if (player && player.state === "started") {
         try { player.stop(); } catch(e){}
       }
+      stopAllStems();
     } else {
-      if (player && player.buffer && player.buffer.loaded && !parsedMidi) {
+      if (player && player.buffer && player.buffer.loaded && !parsedMidi && Object.keys(stems).length === 0) {
         try { player.start(0, Tone.Transport.seconds); } catch(e){}
       }
+      startAllStems(Tone.Transport.seconds);
     }
-  }, [isPlaying, synth, stopAllNotes, player, parsedMidi]);
+  }, [isPlaying, synth, stopAllNotes, player, parsedMidi, stopAllStems, startAllStems, stems]);
 
   const rebuildMidiPart = useCallback((currentParsedMidi: Midi, currentTracks: TrackState[]) => {
     if (midiPartRef.current) {
@@ -188,6 +197,8 @@ export function PlayerModule() {
         setMidiPart(null);
       }
       disposeAll();
+      disposeAllStems();
+      if (player) player.buffer = new Tone.ToneAudioBuffer();
       
       const arrayBuffer = await file.arrayBuffer();
       const isMidi = file.name.toLowerCase().endsWith('.mid') || file.name.toLowerCase().endsWith('.midi');
@@ -229,7 +240,42 @@ export function PlayerModule() {
         setParsedMidi(null);
         setTracks([]);
         const audioBuffer = await Tone.context.decodeAudioData(arrayBuffer);
-        player.buffer = new Tone.ToneAudioBuffer(audioBuffer);
+        
+        // Separação com IA
+        const separationResult = await separate(audioBuffer);
+        
+        const newTracks: TrackState[] = [];
+        let idCounter = 0;
+        const stemNames = ['vocals', 'drums', 'bass', 'other'];
+        const displayNames = { vocals: 'Voz', drums: 'Bateria', bass: 'Baixo', other: 'Outros' };
+        
+        for (const trackName of stemNames) {
+           const trackData = separationResult[trackName as keyof typeof separationResult];
+           if (trackData) {
+              const stemBuffer = arraysToAudioBuffer(
+                trackData.left, 
+                trackData.right, 
+                audioBuffer.sampleRate, 
+                Tone.context.rawContext as AudioContext
+              );
+              const toneBuffer = new Tone.ToneAudioBuffer(stemBuffer);
+              addStem(trackName, toneBuffer);
+              
+              newTracks.push({
+                 id: idCounter++,
+                 name: displayNames[trackName as keyof typeof displayNames],
+                 instrumentName: trackName,
+                 notesCount: 0,
+                 isMuted: false,
+                 volume: 1,
+                 program: 0,
+                 isAudioStem: true
+              });
+           }
+        }
+        
+        setTracks(newTracks);
+        setSelectedTrackIndex(0);
         setDuration(audioBuffer.duration);
       }
     } catch (err) {
@@ -249,8 +295,14 @@ export function PlayerModule() {
       try { node.stop(); } catch(e){}
     });
     activeNodesRef.current = [];
-    if (isPlaying && player && player.buffer && player.buffer.loaded && !parsedMidi) {
-        try { player.stop(); player.start(0, val); } catch(e){}
+    stopAllStems();
+    
+    if (isPlaying && !parsedMidi) {
+        if (Object.keys(stems).length === 0 && player && player.buffer && player.buffer.loaded) {
+            try { player.stop(); player.start(0, val); } catch(e){}
+        } else {
+            startAllStems(val);
+        }
     }
   };
 
@@ -286,15 +338,29 @@ export function PlayerModule() {
     if (!player || !player.buffer || !player.buffer.loaded) return;
     setIsExporting(true);
     try {
-      const toneBuffer = player.buffer as unknown as Tone.ToneAudioBuffer;
-      const originalBuffer = toneBuffer.get() as AudioBuffer;
-      const renderDuration = originalBuffer.duration / speed;
+      const renderDuration = duration / speed;
       
       const renderedBuffer = await Tone.Offline(() => {
         const pShift = new Tone.PitchShift(pitch).toDestination();
-        const plr = new Tone.Player(originalBuffer).connect(pShift);
-        plr.playbackRate = speed;
-        plr.start(0);
+        
+        const hasStems = Object.keys(stems).length > 0;
+        
+        if (hasStems) {
+          Object.values(stems).forEach(stem => {
+            if (!stem.isMuted && stem.player.buffer) {
+              const gain = new Tone.Gain(stem.volume).connect(pShift);
+              const plr = new Tone.Player(stem.player.buffer).connect(gain);
+              plr.playbackRate = speed;
+              plr.start(0);
+            }
+          });
+        } else {
+          const toneBuffer = player.buffer as unknown as Tone.ToneAudioBuffer;
+          const originalBuffer = toneBuffer.get() as AudioBuffer;
+          const plr = new Tone.Player(originalBuffer).connect(pShift);
+          plr.playbackRate = speed;
+          plr.start(0);
+        }
       }, renderDuration);
 
       const wavData = audioBufferToWav(renderedBuffer.get() as AudioBuffer);
@@ -412,7 +478,8 @@ export function PlayerModule() {
             
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
                 {tracks.map((track: TrackState) => {
-                    const inst = instruments[track.instrumentName];
+                    const isAudio = !!track.isAudioStem;
+                    const inst = isAudio ? stems[track.instrumentName] : instruments[track.instrumentName];
                     const isSelected = selectedTrackIndex === track.id;
                     return (
                         <div key={track.id} className={cn(
@@ -424,16 +491,21 @@ export function PlayerModule() {
                                     <span className={cn("text-[11px] font-black uppercase truncate tracking-tight mb-0.5", isSelected ? "text-white" : "text-white/60")}>
                                         {track.name}
                                     </span>
-                                    <button 
-                                        onClick={() => { setBrowserTargetTrack(track.id); setIsInstrumentBrowserOpen(true); }}
-                                        className="text-[9px] font-bold text-orange-500/70 hover:text-orange-500 uppercase flex items-center gap-1 transition-colors"
-                                    >
-                                        <Settings className="w-3 h-3" /> {track.instrumentName.replace(/_/g, ' ')}
-                                    </button>
+                                    {!isAudio && (
+                                        <button 
+                                            onClick={() => { setBrowserTargetTrack(track.id); setIsInstrumentBrowserOpen(true); }}
+                                            className="text-[9px] font-bold text-orange-500/70 hover:text-orange-500 uppercase flex items-center gap-1 transition-colors"
+                                        >
+                                            <Settings className="w-3 h-3" /> {track.instrumentName.replace(/_/g, ' ')}
+                                        </button>
+                                    )}
+                                    {isAudio && (
+                                        <span className="text-[9px] font-bold text-orange-500/70 uppercase">Áudio (Stem)</span>
+                                    )}
                                 </div>
                                 <div className="flex gap-1">
                                     <button 
-                                        onClick={() => toggleMute(track.instrumentName)}
+                                        onClick={() => isAudio ? toggleStemM(track.instrumentName) : toggleMute(track.instrumentName)}
                                         className={cn(
                                             "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
                                             inst?.isMuted ? "bg-red-500 text-white" : "bg-white/5 text-white/40 hover:bg-white/10"
@@ -460,7 +532,7 @@ export function PlayerModule() {
                                     max={1.5} 
                                     step={0.01} 
                                     value={inst?.volume || 1} 
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInstrumentVolume(track.instrumentName, Number(e.target.value))}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => isAudio ? setStemVol(track.instrumentName, Number(e.target.value)) : setInstrumentVolume(track.instrumentName, Number(e.target.value))}
                                     className="flex-1"
                                 />
                                 <span className="text-[10px] font-black text-white/30 w-8 text-right tabular-nums">
@@ -583,6 +655,30 @@ export function PlayerModule() {
                         Fechar Navegador
                     </Button>
                 </div>
+            </div>
+        </div>
+      )}
+
+      {/* Demucs Loading Modal */}
+      {demucsState.isProcessing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="w-full max-w-md bg-[#111] rounded-3xl border border-white/10 shadow-3xl p-8 flex flex-col items-center text-center">
+                <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6" />
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Processando IA (Demucs)</h3>
+                <p className="text-xs text-orange-500 font-bold uppercase tracking-widest mb-6">{demucsState.phase}</p>
+                
+                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-2">
+                    <div 
+                        className="h-full bg-linear-to-r from-orange-500 to-yellow-500 transition-all duration-300"
+                        style={{ width: `${Math.max(demucsState.downloadProgress, demucsState.progress)}%` }}
+                    />
+                </div>
+                <div className="w-full flex justify-between text-[10px] font-black text-white/40 tabular-nums">
+                    <span>{demucsState.downloadProgress > 0 && demucsState.downloadProgress < 100 ? 'Download' : 'Separação'}</span>
+                    <span>{Math.round(Math.max(demucsState.downloadProgress, demucsState.progress))}%</span>
+                </div>
+                
+                <p className="text-[10px] text-white/30 mt-6 max-w-xs mx-auto">Esse processo utiliza a sua placa de vídeo local. Dependendo do seu hardware, pode demorar alguns minutos. Não feche a aba.</p>
             </div>
         </div>
       )}
