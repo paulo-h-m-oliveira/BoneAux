@@ -29,26 +29,26 @@ export function MetronomeModule() {
           <div className="p-2 bg-yellow-500/10 rounded-lg">
             <Metronome className="w-6 h-6 text-yellow-500" />
           </div>
-          Batida Quântica
+          Batida
         </CardTitle>
         <div className="flex items-center gap-4">
-           <div className={cn(
-             "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-75 border-2",
-             flash ? "scale-110" : "scale-100",
-             flash === "accent" 
-               ? "bg-orange-500 border-orange-400 shadow-[0_0_30px_hsl(25,100%,50%)]" 
-               : flash === "normal" 
-                 ? "bg-yellow-500 border-yellow-400 shadow-[0_0_20px_hsl(45,100%,50%)]" 
-                 : "bg-white/5 border-white/10"
-           )}>
-             <div className={cn(
-               "w-2 h-2 rounded-full",
-               flash ? "bg-white animate-ping" : "bg-white/20"
-             )} />
-           </div>
-           <Button variant="ghost" size="icon" onClick={toggleMetronome} className="rounded-full hover:bg-white/10 transition-all">
-             {isMetronomeMuted ? <VolumeX className="w-5 h-5 text-red-500" /> : <Volume2 className="w-5 h-5 text-yellow-500" />}
-           </Button>
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-75 border-2",
+            flash ? "scale-110" : "scale-100",
+            flash === "accent"
+              ? "bg-orange-500 border-orange-400 shadow-[0_0_30px_hsl(25,100%,50%)]"
+              : flash === "normal"
+                ? "bg-yellow-500 border-yellow-400 shadow-[0_0_20px_hsl(45,100%,50%)]"
+                : "bg-white/5 border-white/10"
+          )}>
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              flash ? "bg-white animate-ping" : "bg-white/20"
+            )} />
+          </div>
+          <Button variant="ghost" size="icon" onClick={toggleMetronome} className="rounded-full hover:bg-white/10 transition-all">
+            {isMetronomeMuted ? <VolumeX className="w-5 h-5 text-red-500" /> : <Volume2 className="w-5 h-5 text-yellow-500" />}
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-10 pt-2">
@@ -70,13 +70,13 @@ export function MetronomeModule() {
             </div>
           </div>
           <div className="relative pt-2">
-            <Slider 
-              min={40} 
-              max={240} 
-              step={1} 
-              value={bpm} 
+            <Slider
+              min={40}
+              max={240}
+              step={1}
+              value={bpm}
               disabled={isMidiSynced}
-              onChange={(e) => changeBpm(Number(e.target.value))} 
+              onChange={(e) => changeBpm(Number(e.target.value))}
               className={cn("relative z-10", isMidiSynced && "opacity-20 cursor-not-allowed")}
             />
             <div className="absolute top-1/2 left-0 w-full h-[2px] bg-white/5 -translate-y-1/2" />
