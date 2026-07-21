@@ -81,7 +81,7 @@ export default function App() {
               size="lg"
               className="h-16 px-12 text-xl font-black rounded-2xl orange-glow hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
             >
-              Iniciar Sistema
+              Iniciar Sistem
             </Button>
           </div>
         ) : (
